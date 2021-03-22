@@ -11,6 +11,15 @@ class DashboardPage extends StatelessWidget {
         children: <Widget>[
           SizedBox(height: 16,),
           Text(
+            "System Overview",
+            style: TextStyle(
+                fontWeight: FontWeight.bold,
+                color: Colors.white70,
+                fontSize: 24
+            ),
+          ),
+          SizedBox(height: 16,),
+          Text(
             "CPU usage: $_cpuCurrentUsage %",
             style: TextStyle(
                 fontWeight: FontWeight.bold,
@@ -21,7 +30,7 @@ class DashboardPage extends StatelessWidget {
           ),
           SliderTheme(
               data: SliderTheme.of(context).copyWith(
-                trackHeight: 10,
+                trackHeight: 12,
                 disabledActiveTrackColor: Color(0x9900ad85),
                 thumbShape: RoundSliderThumbShape(enabledThumbRadius: 0.0), // hide thumb
               ),

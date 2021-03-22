@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'dashboard.dart';
 import 'cpu_usage.dart';
+import 'disk.dart';
 
 void main() {
   runApp(MyApp());
@@ -48,6 +49,7 @@ class _MyHomePageState extends State<MyHomePage> {
   final _pages = [
     DashboardPage(),
     CpuUsagePage(),
+    DiskPage(),
   ];
 
   @override
@@ -63,7 +65,12 @@ class _MyHomePageState extends State<MyHomePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.title),
+        title: Text(
+          widget.title,
+          style: TextStyle(
+            color: Colors.white70
+          ),
+        ),
       ),
       body: PageView(
         controller: _controller,
