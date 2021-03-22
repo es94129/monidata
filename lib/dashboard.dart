@@ -24,7 +24,7 @@ class DashboardPage extends StatelessWidget {
             style: TextStyle(
                 fontWeight: FontWeight.bold,
                 color: Color(0xff75729e),
-                fontSize: 18
+                fontSize: 20
             ),
             textAlign: TextAlign.center,
           ),
@@ -41,6 +41,79 @@ class DashboardPage extends StatelessWidget {
                 onChanged: null,
               ),
           ),
+          SizedBox(height: 16,),
+          Row(
+            mainAxisSize: MainAxisSize.max,
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: <Widget>[
+              Column(
+                children: [
+                  Text(
+                    "Disk Read",
+                    style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xff75729e),
+                        fontSize: 20
+                    ),
+                  ),
+                  SizedBox(height: 6,),
+                  RichText(
+                    text: TextSpan(
+                        style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xff75729e),
+                            fontSize: 16
+                        ),
+                      children: <TextSpan>[
+                        TextSpan(
+                            text: "2.5",
+                            style: TextStyle(
+                              color: Color(0xff00ad85),
+                                fontSize: 20,
+                              fontWeight: FontWeight.bold
+                            )
+                        ),
+                        TextSpan(text: " MB/s")
+                      ]
+                    ),
+                  ),
+                ],
+              ),
+              Column(
+                children: [
+                  Text(
+                    "Disk Write",
+                    style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xff75729e),
+                        fontSize: 20
+                    ),
+                  ),
+                  SizedBox(height: 6,),
+                  RichText(
+                    text: TextSpan(
+                        style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xff75729e),
+                            fontSize: 16
+                        ),
+                        children: <TextSpan>[
+                          TextSpan(
+                              text: "0.2",
+                              style: TextStyle(
+                                  color: Color(0xff00ad85),
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.bold
+                              )
+                          ),
+                          TextSpan(text: " MB/s")
+                        ]
+                    ),
+                  ),
+                ],
+              )
+            ],
+          )
         ],
       ),
     );

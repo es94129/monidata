@@ -1,6 +1,8 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 
+import 'indicator.dart';
+
 class DiskPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -63,6 +65,22 @@ class DiskPage extends StatelessWidget {
                 ],
               )),
             )),
+            SizedBox(height: 16,),
+            Row(
+              mainAxisSize: MainAxisSize.max,
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: <Widget>[
+                Indicator(
+                  color: const Color(0xff17b978),
+                  text: 'Disk Read',
+                ),
+                Indicator(
+                  color: const Color(0xfff57170),
+                  text: 'Disk Write',
+                ),
+              ],
+            ),
+            SizedBox(height: 16,)
           ]),
     );
   }
