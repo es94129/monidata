@@ -3,6 +3,7 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:monidata/node_detail.dart';
 
 import 'netdata/info.dart';
 
@@ -48,12 +49,20 @@ class _NodeListState extends State<NodeListPage> {
                       child: InkWell(
                         borderRadius: BorderRadius.circular(20),
                         onTap: () {
-                          // TODO: navigate
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => NodeDetailPage(
+                                  hostname: snapshot.data.mirroredHosts[index]),
+                            ),
+                          );
                         },
                         child: Center(
                           child: Column(
                             children: <Widget>[
-                              SizedBox(height: 20,),
+                              SizedBox(
+                                height: 20,
+                              ),
                               SizedBox(
                                 width: 300,
                                 height: 40,
