@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 
-import 'dashboard.dart';
-import 'cpu_usage.dart';
-import 'disk.dart';
+import 'node_list.dart';
 
 void main() {
   runApp(MyApp());
@@ -17,11 +15,10 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
           fontFamily: 'Nunito',
           primaryColor: Color(0xff4895EF),
+          backgroundColor: Color(0xfff9f7fa),
           primaryTextTheme: TextTheme(
             headline5: TextStyle(
-              color: Color(0xff212121),
-              fontWeight: FontWeight.bold
-            ),
+                color: Color(0xff212121), fontWeight: FontWeight.bold),
             headline6: TextStyle(
               color: Colors.pink,
               fontWeight: FontWeight.w900,
@@ -36,10 +33,14 @@ class MyApp extends StatelessWidget {
               fontWeight: FontWeight.bold,
               fontSize: 14,
             ),
-          )),
+          ),
+          iconTheme: IconThemeData(color: Color(0xff212121))),
       home: MyHomePage(
-        title: 'Monitoring your systems',
+        title: 'Realtime systems monitoring',
       ),
+      routes: {
+        '/node_list': (context) => NodeListPage(),
+      },
     );
   }
 }
@@ -71,43 +72,11 @@ class MyHomePage extends StatelessWidget {
         body: Center(
           child: Column(
             children: <Widget>[
-              SizedBox(height: 20,),
-              Card(
-                color: Color(0xfff3f0f5),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(40),
-                ),
-                child: InkWell(
-                  borderRadius: BorderRadius.circular(40),
-                  onTap: () {
-                    // TODO: navigate
-                  },
-                  child: Column(
-                    children: <Widget>[
-                      SizedBox(
-                        width: 300,
-                        height: 20,
-                      ),
-                      SizedBox(
-                        width: 200,
-                        child: Text(
-                          'Nodes Overview',
-                          style: Theme.of(context).primaryTextTheme.headline5,
-                        ),
-                      ),
-                      SizedBox(height: 20,),
-                      Image(
-                        image: AssetImage('assets/images/homepage-cluster.png'),
-                        height: 150,
-                      ),
-                      SizedBox(height: 20,),
-                    ],
-                  )
-                ),
+              SizedBox(
+                height: 20,
               ),
-              SizedBox(height: 20,),
               Card(
-                color: Color(0xfff3f0f5),
+                color: Theme.of(context).backgroundColor,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(40),
                 ),
@@ -125,19 +94,63 @@ class MyHomePage extends StatelessWidget {
                         SizedBox(
                           width: 200,
                           child: Text(
+                            'Nodes Overview',
+                            style: Theme.of(context).primaryTextTheme.headline5,
+                          ),
+                        ),
+                        SizedBox(
+                          height: 20,
+                        ),
+                        Image(
+                          image:
+                              AssetImage('assets/images/homepage-cluster.png'),
+                          height: 150,
+                        ),
+                        SizedBox(
+                          height: 20,
+                        ),
+                      ],
+                    )),
+              ),
+              SizedBox(
+                height: 20,
+              ),
+              Card(
+                color: Theme.of(context).backgroundColor,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(40),
+                ),
+                child: InkWell(
+                    borderRadius: BorderRadius.circular(40),
+                    onTap: () {
+                      Navigator.pushNamed(context, "/node_list");
+                    },
+                    child: Column(
+                      children: <Widget>[
+                        SizedBox(
+                          width: 300,
+                          height: 20,
+                        ),
+                        SizedBox(
+                          width: 200,
+                          child: Text(
                             'Node Details',
                             style: Theme.of(context).primaryTextTheme.headline5,
                           ),
                         ),
-                        SizedBox(height: 20,),
+                        SizedBox(
+                          height: 20,
+                        ),
                         Image(
-                          image: AssetImage('assets/images/homepage-server.png'),
+                          image:
+                              AssetImage('assets/images/homepage-server.png'),
                           height: 150,
                         ),
-                        SizedBox(height: 20,),
+                        SizedBox(
+                          height: 20,
+                        ),
                       ],
-                    )
-                ),
+                    )),
               ),
             ],
           ),
