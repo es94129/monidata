@@ -4,14 +4,12 @@ class Indicator extends StatelessWidget {
   final Color color;
   final String text;
   final double size;
-  final Color textColor;
 
   const Indicator({
     Key key,
     this.color,
     this.text,
     this.size = 16,
-    this.textColor = const Color(0xff75729e),
   }) : super(key: key);
 
   @override
@@ -31,7 +29,7 @@ class Indicator extends StatelessWidget {
         ),
         Text(
           text,
-          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: textColor),
+          style: Theme.of(context).primaryTextTheme.bodyText1,
         )
       ],
     );

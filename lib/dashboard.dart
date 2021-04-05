@@ -6,7 +6,6 @@ class DashboardPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: const Color(0xff262545),
       child: Column(
         children: <Widget>[
           SizedBox(height: 16,),
@@ -14,7 +13,6 @@ class DashboardPage extends StatelessWidget {
             "System Overview",
             style: TextStyle(
                 fontWeight: FontWeight.bold,
-                color: Colors.white70,
                 fontSize: 24
             ),
           ),
@@ -23,7 +21,6 @@ class DashboardPage extends StatelessWidget {
             "CPU usage: $_cpuCurrentUsage %",
             style: TextStyle(
                 fontWeight: FontWeight.bold,
-                color: Color(0xff75729e),
                 fontSize: 20
             ),
             textAlign: TextAlign.center,
@@ -31,7 +28,7 @@ class DashboardPage extends StatelessWidget {
           SliderTheme(
               data: SliderTheme.of(context).copyWith(
                 trackHeight: 12,
-                disabledActiveTrackColor: Color(0x9900ad85),
+                disabledActiveTrackColor: Theme.of(context).primaryColor,
                 thumbShape: RoundSliderThumbShape(enabledThumbRadius: 0.0), // hide thumb
               ),
               child: Slider(
@@ -52,29 +49,15 @@ class DashboardPage extends StatelessWidget {
                     "Disk Read",
                     style: TextStyle(
                         fontWeight: FontWeight.bold,
-                        color: Color(0xff75729e),
                         fontSize: 20
                     ),
                   ),
                   SizedBox(height: 6,),
-                  RichText(
-                    text: TextSpan(
-                        style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xff75729e),
-                            fontSize: 16
-                        ),
-                      children: <TextSpan>[
-                        TextSpan(
-                            text: "2.5",
-                            style: TextStyle(
-                              color: Color(0xff00ad85),
-                                fontSize: 20,
-                              fontWeight: FontWeight.bold
-                            )
-                        ),
-                        TextSpan(text: " MB/s")
-                      ]
+                  Text(
+                    "2.5 MB/s",
+                    style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16
                     ),
                   ),
                 ],
@@ -85,29 +68,16 @@ class DashboardPage extends StatelessWidget {
                     "Disk Write",
                     style: TextStyle(
                         fontWeight: FontWeight.bold,
-                        color: Color(0xff75729e),
+//                        color: Color(0xff75729e),
                         fontSize: 20
                     ),
                   ),
                   SizedBox(height: 6,),
-                  RichText(
-                    text: TextSpan(
-                        style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xff75729e),
-                            fontSize: 16
-                        ),
-                        children: <TextSpan>[
-                          TextSpan(
-                              text: "0.2",
-                              style: TextStyle(
-                                  color: Color(0xff00ad85),
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.bold
-                              )
-                          ),
-                          TextSpan(text: " MB/s")
-                        ]
+                  Text(
+                    "0.2 MB/s",
+                    style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16
                     ),
                   ),
                 ],

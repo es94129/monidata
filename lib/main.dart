@@ -15,11 +15,26 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'Monidata',
       theme: ThemeData(
-        primaryColor: const Color(0xff262545),
-        primaryColorDark: const Color(0xff201f39),
-        brightness: Brightness.dark,
+        fontFamily: 'Nunito',
+        primaryColor: Color(0xff4895EF),
+        primaryTextTheme: TextTheme(
+          headline6: TextStyle(
+            color: Colors.pink,
+              fontWeight: FontWeight.w900,
+          ),
+          bodyText1: TextStyle(
+            color: Color(0xff212121),
+            fontWeight: FontWeight.bold,
+            fontSize: 16,
+          ),
+          bodyText2: TextStyle(
+            color: Color(0xff616161),
+            fontWeight: FontWeight.bold,
+            fontSize: 14,
+          ),
+        )
       ),
-      home: MyHomePage(title: 'Monitoring your cluster'),
+      home: MyHomePage(title: 'Dashboard'),
     );
   }
 }
@@ -65,11 +80,10 @@ class _MyHomePageState extends State<MyHomePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        backgroundColor: Color(0x00ffffff),
+        elevation: 0,
         title: Text(
           widget.title,
-          style: TextStyle(
-            color: Colors.white70
-          ),
         ),
       ),
       body: PageView(

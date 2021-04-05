@@ -7,7 +7,6 @@ class CpuUsagePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-        color: const Color(0xff262545),
         child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[
@@ -16,7 +15,6 @@ class CpuUsagePage extends StatelessWidget {
                 "CPU usage",
                 style: TextStyle(
                     fontWeight: FontWeight.bold,
-                    color: Color(0xff75729e),
                     fontSize: 18
                 ),
                 textAlign: TextAlign.center,
@@ -31,7 +29,7 @@ class CpuUsagePage extends StatelessWidget {
                             maxY: 100,
                             lineTouchData: LineTouchData(
                               touchTooltipData: LineTouchTooltipData(
-                                tooltipBgColor: Colors.grey.withOpacity(0.8),
+                                tooltipBgColor: Colors.pink.withOpacity(0.1),
                               ),
                               touchCallback: (LineTouchResponse touchResponse) {},
                               handleBuiltInTouches: true,
@@ -42,19 +40,13 @@ class CpuUsagePage extends StatelessWidget {
                             titlesData: FlTitlesData(
                               bottomTitles: SideTitles(
                                 showTitles: true,
-                                getTextStyles: (value) => const TextStyle(
-                                  color: Color(0xff75729e),
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 14,
-                                ),
+                                getTextStyles: (value) =>
+                                  Theme.of(context).primaryTextTheme.bodyText2,
                               ),
                               leftTitles: SideTitles(
                                   showTitles: true,
-                                  getTextStyles: (value) => const TextStyle(
-                                    color: Color(0xff75729e),
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 14,
-                                  ),
+                                  getTextStyles: (value) =>
+                                    Theme.of(context).primaryTextTheme.bodyText2,
                                   getTitles: (value) {
                                     if (value.toInt() % 20 == 0)
                                       return value.toInt().toString();
