@@ -15,31 +15,36 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'Monidata',
       theme: ThemeData(
-        fontFamily: 'Nunito',
-        primaryColor: Color(0xff4895EF),
-        primaryTextTheme: TextTheme(
-          headline6: TextStyle(
-            color: Colors.pink,
+          fontFamily: 'Nunito',
+          primaryColor: Color(0xff4895EF),
+          primaryTextTheme: TextTheme(
+            headline5: TextStyle(
+              color: Color(0xff212121),
+              fontWeight: FontWeight.bold
+            ),
+            headline6: TextStyle(
+              color: Colors.pink,
               fontWeight: FontWeight.w900,
-          ),
-          bodyText1: TextStyle(
-            color: Color(0xff212121),
-            fontWeight: FontWeight.bold,
-            fontSize: 16,
-          ),
-          bodyText2: TextStyle(
-            color: Color(0xff616161),
-            fontWeight: FontWeight.bold,
-            fontSize: 14,
-          ),
-        )
+            ),
+            bodyText1: TextStyle(
+              color: Color(0xff212121),
+              fontWeight: FontWeight.bold,
+              fontSize: 16,
+            ),
+            bodyText2: TextStyle(
+              color: Color(0xff616161),
+              fontWeight: FontWeight.bold,
+              fontSize: 14,
+            ),
+          )),
+      home: MyHomePage(
+        title: 'Monitoring your systems',
       ),
-      home: MyHomePage(title: 'Dashboard'),
     );
   }
 }
 
-class MyHomePage extends StatefulWidget {
+class MyHomePage extends StatelessWidget {
   MyHomePage({Key key, this.title}) : super(key: key);
 
   // This widget is the home page of your application. It is stateful, meaning
@@ -54,42 +59,88 @@ class MyHomePage extends StatefulWidget {
   final String title;
 
   @override
-  _MyHomePageState createState() => _MyHomePageState();
-}
-
-class _MyHomePageState extends State<MyHomePage> {
-  int _currentPage = 0;
-
-  final _controller = PageController(initialPage: 0);
-  final _pages = [
-    DashboardPage(),
-    CpuUsagePage(),
-    DiskPage(),
-  ];
-
-  @override
-  void initState() {
-    _controller.addListener(() {
-      setState(() {
-        _currentPage = _controller.page.round();
-      });
-    });
-  }
-
-  @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Color(0x00ffffff),
-        elevation: 0,
-        title: Text(
-          widget.title,
+        appBar: AppBar(
+          backgroundColor: Color(0x00ffffff),
+          elevation: 0,
+          title: Text(
+            this.title,
+          ),
         ),
-      ),
-      body: PageView(
-        controller: _controller,
-        children: _pages,
-      )
-    );
+        body: Center(
+          child: Column(
+            children: <Widget>[
+              SizedBox(height: 20,),
+              Card(
+                color: Color(0xfff3f0f5),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(40),
+                ),
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(40),
+                  onTap: () {
+                    // TODO: navigate
+                  },
+                  child: Column(
+                    children: <Widget>[
+                      SizedBox(
+                        width: 300,
+                        height: 20,
+                      ),
+                      SizedBox(
+                        width: 200,
+                        child: Text(
+                          'Nodes Overview',
+                          style: Theme.of(context).primaryTextTheme.headline5,
+                        ),
+                      ),
+                      SizedBox(height: 20,),
+                      Image(
+                        image: AssetImage('assets/images/homepage-cluster.png'),
+                        height: 150,
+                      ),
+                      SizedBox(height: 20,),
+                    ],
+                  )
+                ),
+              ),
+              SizedBox(height: 20,),
+              Card(
+                color: Color(0xfff3f0f5),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(40),
+                ),
+                child: InkWell(
+                    borderRadius: BorderRadius.circular(40),
+                    onTap: () {
+                      // TODO: navigate
+                    },
+                    child: Column(
+                      children: <Widget>[
+                        SizedBox(
+                          width: 300,
+                          height: 20,
+                        ),
+                        SizedBox(
+                          width: 200,
+                          child: Text(
+                            'Node Details',
+                            style: Theme.of(context).primaryTextTheme.headline5,
+                          ),
+                        ),
+                        SizedBox(height: 20,),
+                        Image(
+                          image: AssetImage('assets/images/homepage-server.png'),
+                          height: 150,
+                        ),
+                        SizedBox(height: 20,),
+                      ],
+                    )
+                ),
+              ),
+            ],
+          ),
+        ));
   }
 }
