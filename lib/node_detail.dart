@@ -42,11 +42,9 @@ class _NodeDetailState extends State<NodeDetailPage> {
     futureChart = fetchChart(widget.hostname, windowSeconds, 'system.cpu');
     timer = Timer.periodic(
         Duration(seconds: 1),
-            (Timer t) =>
-            setState(() {
-              futureChart =
-                  fetchChart(widget.hostname, windowSeconds,
-                      nameToChart[chartName]['name']);
+        (Timer t) => setState(() {
+              futureChart = fetchChart(widget.hostname, windowSeconds,
+                  nameToChart[chartName]['name']);
             }));
   }
 
@@ -63,9 +61,14 @@ class _NodeDetailState extends State<NodeDetailPage> {
           backgroundColor: Color(0x00ffffff),
           elevation: 0,
           title: Text(widget.hostname),
-          iconTheme: Theme
-              .of(context)
-              .iconTheme,
+          actions: <Widget>[
+            IconButton(
+                icon: const Icon(Icons.home_filled),
+                onPressed: () {
+                  Navigator.pushNamed(context, '/');
+                }),
+          ],
+          iconTheme: Theme.of(context).iconTheme,
         ),
         body: Container(
             padding: const EdgeInsets.all(20),
@@ -76,25 +79,18 @@ class _NodeDetailState extends State<NodeDetailPage> {
                   children: <Widget>[
                     Text(
                       'Dashboard of   ',
-                      style: Theme
-                          .of(context)
-                          .primaryTextTheme
-                          .bodyText1,
+                      style: Theme.of(context).primaryTextTheme.bodyText1,
                     ),
                     DropdownButton(
                       value: chartName,
-                      style: Theme
-                          .of(context)
-                          .primaryTextTheme
-                          .bodyText1,
+                      style: Theme.of(context).primaryTextTheme.bodyText1,
                       icon: const Icon(Icons.arrow_drop_down_circle),
                       onChanged: (String newValue) {
                         setState(() {
                           chartName = newValue;
                           chartUnit = nameToChart[newValue]['unit'];
-                          futureChart =
-                              fetchChart(widget.hostname, windowSeconds,
-                                  nameToChart[newValue]['name']);
+                          futureChart = fetchChart(widget.hostname,
+                              windowSeconds, nameToChart[newValue]['name']);
                         });
                       },
                       items: <String>[
@@ -119,12 +115,10 @@ class _NodeDetailState extends State<NodeDetailPage> {
                         if (snapshot.hasData) {
                           return LineChart(LineChartData(
                             lineBarsData:
-                            barDataLines(snapshot.data.data, chartName),
+                                barDataLines(snapshot.data.data, chartName),
                             minY: chartName == 'CPU' ? 0 : null,
                             maxY: chartName == 'CPU' ? 100 : null,
-                            backgroundColor: Theme
-                                .of(context)
-                                .backgroundColor,
+                            backgroundColor: Theme.of(context).backgroundColor,
                             gridData: FlGridData(
                               show: false,
                             ),
@@ -148,16 +142,14 @@ class _NodeDetailState extends State<NodeDetailPage> {
                             titlesData: FlTitlesData(
                               bottomTitles: SideTitles(
                                   showTitles: true,
-                                  getTextStyles: (value) =>
-                                  Theme
-                                      .of(context)
+                                  getTextStyles: (value) => Theme.of(context)
                                       .primaryTextTheme
                                       .bodyText2,
                                   getTitles: (timestamp) {
                                     if ((timestamp / 5).floor() * 5 % 60 == 0) {
                                       var datetime =
-                                      DateTime.fromMillisecondsSinceEpoch(
-                                          timestamp.toInt() * 1000);
+                                          DateTime.fromMillisecondsSinceEpoch(
+                                              timestamp.toInt() * 1000);
                                       return TimeOfDay.fromDateTime(datetime)
                                           .format(context);
                                     }
@@ -166,9 +158,7 @@ class _NodeDetailState extends State<NodeDetailPage> {
                                   }),
                               leftTitles: SideTitles(
                                 showTitles: true,
-                                getTextStyles: (value) =>
-                                Theme
-                                    .of(context)
+                                getTextStyles: (value) => Theme.of(context)
                                     .primaryTextTheme
                                     .bodyText2,
                                 interval: nameToChart[chartName]['interval'],
@@ -184,10 +174,7 @@ class _NodeDetailState extends State<NodeDetailPage> {
                     )),
                 Text(
                   '(' + chartUnit + ')',
-                  style: Theme
-                      .of(context)
-                      .primaryTextTheme
-                      .bodyText2,
+                  style: Theme.of(context).primaryTextTheme.bodyText2,
                 ),
                 SizedBox(
                   height: 16,

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:monidata/overview.dart';
 
 import 'node_list.dart';
 
@@ -40,6 +41,7 @@ class MyApp extends StatelessWidget {
       ),
       routes: {
         '/node_list': (context) => NodeListPage(),
+        '/overview': (context) => OverviewPage(),
       },
     );
   }
@@ -83,7 +85,7 @@ class MyHomePage extends StatelessWidget {
                 child: InkWell(
                     borderRadius: BorderRadius.circular(40),
                     onTap: () {
-                      // TODO: navigate
+                      Navigator.pushNamed(context, "/overview");
                     },
                     child: Column(
                       children: <Widget>[
