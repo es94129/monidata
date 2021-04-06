@@ -22,18 +22,38 @@ class _NodeDetailState extends State<NodeDetailPage> {
   String chartName = "CPU";
   String chartUnit = "%";
 
+  Timer timer;
+  final windowSeconds = 120;
+
   final nameToChart = {
-    'CPU': {'name': 'system.cpu', 'unit': '%'},
-    'Load': {'name': 'system.load', 'unit': 'processes'},
-    'Disk I/O': {'name': 'system.io', 'unit': 'KB/s'},
-    'System RAM': {'name': 'system.ram', 'unit': 'GB'},
-    'Network traffic': {'name': 'system.ip', 'unit': 'megabits/s'},
+    'CPU': {'name': 'system.cpu', 'unit': '%', 'interval': 20.0},
+    'Load': {'name': 'system.load', 'unit': 'processes', 'interval': 0.1},
+    'System RAM': {'name': 'system.ram', 'unit': 'GB', 'interval': 5.0},
+    'Network traffic': {
+      'name': 'system.ip',
+      'unit': 'megabits/s',
+      'interval': 0.5
+    },
   };
 
   @override
   void initState() {
     super.initState();
-    futureChart = fetchChart(widget.hostname, 180, 'system.cpu');
+    futureChart = fetchChart(widget.hostname, windowSeconds, 'system.cpu');
+    timer = Timer.periodic(
+        Duration(seconds: 1),
+            (Timer t) =>
+            setState(() {
+              futureChart =
+                  fetchChart(widget.hostname, windowSeconds,
+                      nameToChart[chartName]['name']);
+            }));
+  }
+
+  @override
+  void dispose() {
+    timer?.cancel();
+    super.dispose();
   }
 
   @override
@@ -43,7 +63,9 @@ class _NodeDetailState extends State<NodeDetailPage> {
           backgroundColor: Color(0x00ffffff),
           elevation: 0,
           title: Text(widget.hostname),
-          iconTheme: Theme.of(context).iconTheme,
+          iconTheme: Theme
+              .of(context)
+              .iconTheme,
         ),
         body: Container(
             padding: const EdgeInsets.all(20),
@@ -54,24 +76,30 @@ class _NodeDetailState extends State<NodeDetailPage> {
                   children: <Widget>[
                     Text(
                       'Dashboard of   ',
-                      style: Theme.of(context).primaryTextTheme.bodyText1,
+                      style: Theme
+                          .of(context)
+                          .primaryTextTheme
+                          .bodyText1,
                     ),
                     DropdownButton(
                       value: chartName,
-                      style: Theme.of(context).primaryTextTheme.bodyText1,
+                      style: Theme
+                          .of(context)
+                          .primaryTextTheme
+                          .bodyText1,
                       icon: const Icon(Icons.arrow_drop_down_circle),
                       onChanged: (String newValue) {
                         setState(() {
                           chartName = newValue;
-                          chartUnit = nameToChart[chartName]['unit'];
-                          futureChart = fetchChart(widget.hostname, 180,
-                              nameToChart[chartName]['name']);
+                          chartUnit = nameToChart[newValue]['unit'];
+                          futureChart =
+                              fetchChart(widget.hostname, windowSeconds,
+                                  nameToChart[newValue]['name']);
                         });
                       },
                       items: <String>[
                         'CPU',
                         'Load',
-                        'Disk I/O',
                         'System RAM',
                         'Network traffic'
                       ].map<DropdownMenuItem<String>>((String value) {
@@ -90,10 +118,13 @@ class _NodeDetailState extends State<NodeDetailPage> {
                       builder: (context, snapshot) {
                         if (snapshot.hasData) {
                           return LineChart(LineChartData(
-                            lineBarsData: barDataLines(snapshot.data.data),
-                            minY: chartName == 'CPU'? 0: null,
-                            maxY: chartName == 'CPU'? 100: null,
-                            backgroundColor: Theme.of(context).backgroundColor,
+                            lineBarsData:
+                            barDataLines(snapshot.data.data, chartName),
+                            minY: chartName == 'CPU' ? 0 : null,
+                            maxY: chartName == 'CPU' ? 100 : null,
+                            backgroundColor: Theme
+                                .of(context)
+                                .backgroundColor,
                             gridData: FlGridData(
                               show: false,
                             ),
@@ -115,29 +146,35 @@ class _NodeDetailState extends State<NodeDetailPage> {
                               ),
                             ),
                             titlesData: FlTitlesData(
-                                bottomTitles: SideTitles(
-                                    showTitles: true,
-                                    getTextStyles: (value) => Theme.of(context)
-                                        .primaryTextTheme
-                                        .bodyText2,
-                                    getTitles: (timestamp) {
-                                      if ((timestamp / 5).floor() * 5 % 60 ==
-                                          0) {
-                                        var datetime =
-                                            DateTime.fromMillisecondsSinceEpoch(
-                                                timestamp.toInt() * 1000);
-                                        return TimeOfDay.fromDateTime(datetime)
-                                            .format(context);
-                                      }
-
-                                      return '';
-                                    }),
-                                leftTitles: SideTitles(
+                              bottomTitles: SideTitles(
                                   showTitles: true,
-                                  getTextStyles: (value) => Theme.of(context)
+                                  getTextStyles: (value) =>
+                                  Theme
+                                      .of(context)
                                       .primaryTextTheme
                                       .bodyText2,
-                                )),
+                                  getTitles: (timestamp) {
+                                    if ((timestamp / 5).floor() * 5 % 60 == 0) {
+                                      var datetime =
+                                      DateTime.fromMillisecondsSinceEpoch(
+                                          timestamp.toInt() * 1000);
+                                      return TimeOfDay.fromDateTime(datetime)
+                                          .format(context);
+                                    }
+
+                                    return '';
+                                  }),
+                              leftTitles: SideTitles(
+                                showTitles: true,
+                                getTextStyles: (value) =>
+                                Theme
+                                    .of(context)
+                                    .primaryTextTheme
+                                    .bodyText2,
+                                interval: nameToChart[chartName]['interval'],
+                                reservedSize: 40,
+                              ),
+                            ),
                           ));
                         } else if (snapshot.hasError) {
                           return Text("${snapshot.error}");
@@ -147,7 +184,10 @@ class _NodeDetailState extends State<NodeDetailPage> {
                     )),
                 Text(
                   '(' + chartUnit + ')',
-                  style: Theme.of(context).primaryTextTheme.bodyText2,
+                  style: Theme
+                      .of(context)
+                      .primaryTextTheme
+                      .bodyText2,
                 ),
                 SizedBox(
                   height: 16,
@@ -188,7 +228,7 @@ Future<Chart> fetchChart(String hostname, int time, String chartName) async {
   }
 }
 
-List<LineChartBarData> barDataLines(List<Data> data) {
+List<LineChartBarData> barDataLines(List<Data> data, String chartName) {
   final colors = <Color>[
     Color(0xaaF72585),
     Color(0xaa3F37C9),
@@ -201,8 +241,12 @@ List<LineChartBarData> barDataLines(List<Data> data) {
   for (int i = 1; i < data[0].values.length; i++) {
     var spots = <FlSpot>[];
     for (int j = 0; j < data.length; j++) {
-      spots.add(
-          FlSpot(data[j].values[0].toDouble(), data[j].values[i].toDouble()));
+      if (chartName == 'System RAM' || chartName == 'Network traffic')
+        spots.add(FlSpot(
+            data[j].values[0].toDouble(), data[j].values[i].toDouble() / 1024));
+      else
+        spots.add(
+            FlSpot(data[j].values[0].toDouble(), data[j].values[i].toDouble()));
     }
     LineChartBarData line = LineChartBarData(
       spots: spots,
