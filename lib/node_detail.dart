@@ -19,11 +19,21 @@ class NodeDetailPage extends StatefulWidget {
 
 class _NodeDetailState extends State<NodeDetailPage> {
   Future<Chart> futureChart;
+  String chartName = "CPU";
+  String chartUnit = "%";
+
+  final nameToChart = {
+    'CPU': {'name': 'system.cpu', 'unit': '%'},
+    'Load': {'name': 'system.load', 'unit': 'processes'},
+    'Disk I/O': {'name': 'system.io', 'unit': 'KB/s'},
+    'System RAM': {'name': 'system.ram', 'unit': 'GB'},
+    'Network traffic': {'name': 'system.ip', 'unit': 'megabits/s'},
+  };
 
   @override
   void initState() {
     super.initState();
-    futureChart = fetchChart(widget.hostname, 180);
+    futureChart = fetchChart(widget.hostname, 180, 'system.cpu');
   }
 
   @override
@@ -40,6 +50,39 @@ class _NodeDetailState extends State<NodeDetailPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: <Widget>[
+                Row(
+                  children: <Widget>[
+                    Text(
+                      'Dashboard of   ',
+                      style: Theme.of(context).primaryTextTheme.bodyText1,
+                    ),
+                    DropdownButton(
+                      value: chartName,
+                      style: Theme.of(context).primaryTextTheme.bodyText1,
+                      icon: const Icon(Icons.arrow_drop_down_circle),
+                      onChanged: (String newValue) {
+                        setState(() {
+                          chartName = newValue;
+                          chartUnit = nameToChart[chartName]['unit'];
+                          futureChart = fetchChart(widget.hostname, 180,
+                              nameToChart[chartName]['name']);
+                        });
+                      },
+                      items: <String>[
+                        'CPU',
+                        'Load',
+                        'Disk I/O',
+                        'System RAM',
+                        'Network traffic'
+                      ].map<DropdownMenuItem<String>>((String value) {
+                        return DropdownMenuItem<String>(
+                          value: value,
+                          child: Text(value),
+                        );
+                      }).toList(),
+                    ),
+                  ],
+                ),
                 AspectRatio(
                     aspectRatio: 1.0,
                     child: FutureBuilder<Chart>(
@@ -48,13 +91,16 @@ class _NodeDetailState extends State<NodeDetailPage> {
                         if (snapshot.hasData) {
                           return LineChart(LineChartData(
                             lineBarsData: barDataLines(snapshot.data.data),
+                            minY: chartName == 'CPU'? 0: null,
+                            maxY: chartName == 'CPU'? 100: null,
+                            backgroundColor: Theme.of(context).backgroundColor,
                             gridData: FlGridData(
                               show: false,
                             ),
                             borderData: FlBorderData(
                               border: const Border(
                                 bottom: BorderSide(
-                                  color: Color(0xff212121),
+                                  color: Colors.black54,
                                   width: 4,
                                 ),
                                 left: BorderSide(
@@ -99,6 +145,10 @@ class _NodeDetailState extends State<NodeDetailPage> {
                         return CircularProgressIndicator();
                       },
                     )),
+                Text(
+                  '(' + chartUnit + ')',
+                  style: Theme.of(context).primaryTextTheme.bodyText2,
+                ),
                 SizedBox(
                   height: 16,
                 ),
@@ -114,7 +164,9 @@ class _NodeDetailState extends State<NodeDetailPage> {
                     } else if (snapshot.hasError) {
                       return Text("${snapshot.error}");
                     }
-                    return SizedBox(height: 1,);
+                    return SizedBox(
+                      height: 1,
+                    );
                   },
                 ),
               ],
@@ -122,10 +174,10 @@ class _NodeDetailState extends State<NodeDetailPage> {
   }
 }
 
-Future<Chart> fetchChart(String hostname, int time) async {
+Future<Chart> fetchChart(String hostname, int time, String chartName) async {
   final response = await http.get(Uri.http(
       "166.111.69.76:19999", "/host/" + hostname + "/api/v1/data", {
-    "chart": "system.cpu",
+    "chart": chartName,
     "after": "-" + time.toString(),
     "options": "nonzero"
   }));
