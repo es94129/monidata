@@ -16,6 +16,7 @@ class OverviewPage extends StatefulWidget {
 
 class _OverviewState extends State<OverviewPage> {
   Future<Info> futureInfo;
+  String chartName = 'CPU';
 
   @override
   void initState() {
@@ -32,68 +33,97 @@ class _OverviewState extends State<OverviewPage> {
           title: Text('Nodes overview'),
           iconTheme: Theme.of(context).iconTheme,
         ),
-        body: Center(
-          child: FutureBuilder<Info>(
-            future: futureInfo,
-            builder: (context, snapshot) {
-              if (snapshot.hasData) {
-                return GridView.builder(
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 2,
-                  ),
-                  padding: const EdgeInsets.all(20),
-                  itemCount: snapshot.data.mirroredHosts.length,
-                  itemBuilder: (BuildContext context, int index) {
-                    return Card(
-                        color: Theme.of(context).backgroundColor,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: InkWell(
-                          borderRadius: BorderRadius.circular(20),
-                          onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => NodeDetailPage(
-                                    hostname:
-                                        snapshot.data.mirroredHosts[index]),
-                              ),
-                            );
-                          },
-                          child: Center(
-                            child: Column(
-                              children: <Widget>[
-                                SizedBox(
-                                  height: 20,
+        body: Column(children: <Widget>[
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              Text(
+                'Overview of   ',
+                style: Theme.of(context).primaryTextTheme.bodyText1,
+              ),
+              DropdownButton(
+                value: chartName,
+                style: Theme.of(context).primaryTextTheme.bodyText1,
+                icon: const Icon(Icons.arrow_drop_down_circle),
+                onChanged: (String newValue) {
+                  setState(() {
+                    chartName = newValue;
+                  });
+                },
+                items: <String>['CPU', 'Load', 'System RAM', 'Network traffic']
+                    .map<DropdownMenuItem<String>>((String value) {
+                  return DropdownMenuItem<String>(
+                    value: value,
+                    child: Text(value),
+                  );
+                }).toList(),
+              ),
+            ],
+          ),
+          Expanded(
+            child: FutureBuilder<Info>(
+              future: futureInfo,
+              builder: (context, snapshot) {
+                if (snapshot.hasData) {
+                  return GridView.builder(
+                    gridDelegate:
+                        const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 2,
+                    ),
+                    padding: const EdgeInsets.all(20),
+                    itemCount: snapshot.data.mirroredHosts.length,
+                    itemBuilder: (BuildContext context, int index) {
+                      return Card(
+                          color: Theme.of(context).backgroundColor,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: InkWell(
+                            borderRadius: BorderRadius.circular(20),
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => NodeDetailPage(
+                                      hostname:
+                                          snapshot.data.mirroredHosts[index]),
                                 ),
-                                SizedBox(
-                                  child: Text(
-                                    snapshot.data.mirroredHosts[index],
-                                    style: TextStyle(
-                                      fontSize: 20,
-                                      fontWeight: FontWeight.bold,
+                              );
+                            },
+                            child: Center(
+                              child: Column(
+                                children: <Widget>[
+                                  SizedBox(
+                                    height: 20,
+                                  ),
+                                  SizedBox(
+                                    child: Text(
+                                      snapshot.data.mirroredHosts[index],
+                                      style: TextStyle(
+                                        fontSize: 20,
+                                        fontWeight: FontWeight.bold,
+                                      ),
                                     ),
                                   ),
-                                ),
-                                NodeOverview(
-                                    hostname:
-                                        snapshot.data.mirroredHosts[index]),
-                              ],
+                                  NodeOverview(
+                                      hostname:
+                                          snapshot.data.mirroredHosts[index]),
+                                ],
+                              ),
                             ),
-                          ),
-                        ));
-                  },
-                );
-              } else if (snapshot.hasError) {
-                return Text("${snapshot.error}");
-              }
+                          ));
+                    },
+                  );
+                } else if (snapshot.hasError) {
+                  return Text("${snapshot.error}");
+                }
 
-              // By default, show a loading spinner.
-              return CircularProgressIndicator();
-            },
+                // By default, show a loading spinner.
+                return CircularProgressIndicator();
+              },
+            ),
           ),
-        ));
+        ]));
   }
 }
 
@@ -165,6 +195,9 @@ class _NodeOverviewState extends State<NodeOverview> {
                     : Container(),
               ],
             ),
+            SizedBox(
+              height: 16,
+            ),
             FutureBuilder<Chart>(
                 future: futureChart,
                 builder: (context, snapshot) {
@@ -173,18 +206,28 @@ class _NodeOverviewState extends State<NodeOverview> {
                     for (int i = 1;
                         i < snapshot.data.data[0].values.length;
                         i++) cpuUsage += snapshot.data.data[0].values[i];
-                    return SliderTheme(
-                      data: SliderTheme.of(context).copyWith(
-                        trackHeight: 12,
-                        disabledActiveTrackColor: Theme.of(context).primaryColor,
-                        thumbShape: RoundSliderThumbShape(enabledThumbRadius: 0.0), // hide thumb
-                      ),
-                      child: Slider(
-                        value: cpuUsage,
-                        min: 0,
-                        max: 100,
-                        onChanged: null,
-                      ),
+                    return Column(
+                      children: <Widget>[
+                        Text(
+                          'Total: ${cpuUsage.toStringAsFixed(2)}%',
+                          style: Theme.of(context).primaryTextTheme.bodyText2,
+                        ),
+                        SliderTheme(
+                          data: SliderTheme.of(context).copyWith(
+                            trackHeight: 12,
+                            disabledActiveTrackColor:
+                                Theme.of(context).primaryColor,
+                            thumbShape: RoundSliderThumbShape(
+                                enabledThumbRadius: 0.0), // hide thumb
+                          ),
+                          child: Slider(
+                            value: cpuUsage,
+                            min: 0,
+                            max: 100,
+                            onChanged: null,
+                          ),
+                        )
+                      ],
                     );
                   } else if (snapshot.hasError) {
                     return Text("${snapshot.error}");
