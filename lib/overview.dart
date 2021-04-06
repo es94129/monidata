@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'node_detail.dart';
 import 'netdata/info.dart';
+import 'netdata/chart.dart';
 
 class OverviewPage extends StatefulWidget {
   OverviewPage({Key key}) : super(key: key);
@@ -69,9 +70,10 @@ class _OverviewState extends State<OverviewPage> {
                                 SizedBox(
                                   child: Text(
                                     snapshot.data.mirroredHosts[index],
-                                    style: Theme.of(context)
-                                        .primaryTextTheme
-                                        .bodyText1,
+                                    style: TextStyle(
+                                      fontSize: 20,
+                                      fontWeight: FontWeight.bold,
+                                    ),
                                   ),
                                 ),
                                 NodeOverview(
@@ -106,11 +108,13 @@ class NodeOverview extends StatefulWidget {
 
 class _NodeOverviewState extends State<NodeOverview> {
   Future<Info> futureInfo;
+  Future<Chart> futureChart;
 
   @override
   void initState() {
     super.initState();
     futureInfo = fetchInfo(widget.hostname);
+    futureChart = fetchChart(widget.hostname, 1, 'system.cpu');
   }
 
   @override
@@ -153,10 +157,40 @@ class _NodeOverviewState extends State<NodeOverview> {
                         ))
                     : Container(),
                 snapshot.data.warnings == 0 && snapshot.data.criticals == 0
-                    ? Text('Clear', style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold),)
+                    ? Text(
+                        'Clear',
+                        style: TextStyle(
+                            color: Colors.green, fontWeight: FontWeight.bold),
+                      )
                     : Container(),
               ],
             ),
+            FutureBuilder<Chart>(
+                future: futureChart,
+                builder: (context, snapshot) {
+                  if (snapshot.hasData) {
+                    double cpuUsage = 0;
+                    for (int i = 1;
+                        i < snapshot.data.data[0].values.length;
+                        i++) cpuUsage += snapshot.data.data[0].values[i];
+                    return SliderTheme(
+                      data: SliderTheme.of(context).copyWith(
+                        trackHeight: 12,
+                        disabledActiveTrackColor: Theme.of(context).primaryColor,
+                        thumbShape: RoundSliderThumbShape(enabledThumbRadius: 0.0), // hide thumb
+                      ),
+                      child: Slider(
+                        value: cpuUsage,
+                        min: 0,
+                        max: 100,
+                        onChanged: null,
+                      ),
+                    );
+                  } else if (snapshot.hasError) {
+                    return Text("${snapshot.error}");
+                  }
+                  return Container();
+                }),
           ]);
         } else if (snapshot.hasError) {
           return Text("${snapshot.error}");
@@ -174,6 +208,20 @@ Future<Info> fetchInfo(String hostname) async {
       Uri.http("166.111.69.76:19999", "/host/" + hostname + "/api/v1/info"));
   if (response.statusCode == 200) {
     return Info().fromJson(jsonDecode(response.body));
+  } else {
+    throw Exception("Failed to load info");
+  }
+}
+
+Future<Chart> fetchChart(String hostname, int time, String chartName) async {
+  final response = await http.get(Uri.http(
+      "166.111.69.76:19999", "/host/" + hostname + "/api/v1/data", {
+    "chart": chartName,
+    "after": "-" + time.toString(),
+    "options": "nonzero"
+  }));
+  if (response.statusCode == 200) {
+    return Chart().fromJson(jsonDecode(response.body));
   } else {
     throw Exception("Failed to load info");
   }
