@@ -139,12 +139,24 @@ class NodeOverview extends StatefulWidget {
 class _NodeOverviewState extends State<NodeOverview> {
   Future<Info> futureInfo;
   Future<Chart> futureChart;
+  Timer timer;
 
   @override
   void initState() {
     super.initState();
     futureInfo = fetchInfo(widget.hostname);
     futureChart = fetchChart(widget.hostname, 1, 'system.cpu');
+    timer = Timer.periodic(
+        Duration(seconds: 1),
+        (Timer t) => setState(() {
+              futureChart = fetchChart(widget.hostname, 1, 'system.cpu');
+            }));
+  }
+
+  @override
+  void dispose() {
+    timer?.cancel();
+    super.dispose();
   }
 
   @override
