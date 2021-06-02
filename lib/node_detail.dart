@@ -24,8 +24,10 @@ class _NodeDetailState extends State<NodeDetailPage> {
   String chartUnit = "%";
 
   Timer timer;
-  final windowSeconds = 120;
+  int windowSeconds = 120;
   int windowOffset = 0;
+
+  int metricOrAnomalyChoiceIndex;
 
   final nameToChart = {
     'CPU': {'name': 'system.cpu', 'unit': '%', 'interval': 20.0},
@@ -41,12 +43,19 @@ class _NodeDetailState extends State<NodeDetailPage> {
   @override
   void initState() {
     super.initState();
+    metricOrAnomalyChoiceIndex = 0;
     futureChart = fetchChart(widget.hostname, windowSeconds, 0, 'system.cpu');
     timer = Timer.periodic(
         Duration(seconds: 1),
-        (Timer t) => setState(() {
-              futureChart = fetchChart(widget.hostname, windowSeconds,
-                  windowOffset, nameToChart[chartName]['name']);
+            (Timer t) =>
+            setState(() {
+              futureChart = fetchChart(
+                  widget.hostname,
+                  windowSeconds,
+                  windowOffset,
+                  metricOrAnomalyChoiceIndex == 0
+                      ? nameToChart[chartName]['name']
+                      : 'anomalies.probability');
             }));
   }
 
@@ -59,191 +68,252 @@ class _NodeDetailState extends State<NodeDetailPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        appBar: AppBar(
-          backgroundColor: Color(0x00ffffff),
-          elevation: 0,
-          title: Text(widget.hostname),
-          actions: <Widget>[
-            IconButton(
-                icon: const Icon(Icons.home_filled),
-                onPressed: () {
-                  Navigator.pushNamed(context, '/');
-                }),
-          ],
-          iconTheme: Theme.of(context).iconTheme,
-        ),
-        body: Container(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: <Widget>[
-                Row(
-                  children: <Widget>[
-                    Text(
-                      'Dashboard of   ',
-                      style: Theme.of(context).primaryTextTheme.bodyText1,
-                    ),
-                    DropdownButton(
-                      value: chartName,
-                      style: Theme.of(context).primaryTextTheme.bodyText1,
-                      icon: const Icon(Icons.arrow_drop_down_circle),
-                      onChanged: (String newValue) {
+      appBar: AppBar(
+        backgroundColor: Color(0x00ffffff),
+        elevation: 0,
+        title: Text(widget.hostname),
+        actions: <Widget>[
+          IconButton(
+              icon: const Icon(Icons.home_filled),
+              onPressed: () {
+                Navigator.pushNamed(context, '/');
+              }),
+        ],
+        iconTheme: Theme
+            .of(context)
+            .iconTheme,
+      ),
+      body: Container(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: <Widget>[
+              Row(
+                children: <Widget>[
+                  Text(
+                    'Dashboard of   ',
+                    style: Theme
+                        .of(context)
+                        .primaryTextTheme
+                        .bodyText1,
+                  ),
+                  DropdownButton(
+                    value: chartName,
+                    style: Theme
+                        .of(context)
+                        .primaryTextTheme
+                        .bodyText1,
+                    icon: const Icon(Icons.arrow_drop_down_circle),
+                    onChanged: (String newValue) {
+                      setState(() {
+                        chartName = newValue;
+                        chartUnit = nameToChart[newValue]['unit'];
+                        windowOffset = 0;
+                        metricOrAnomalyChoiceIndex = 0;
+                        futureChart = fetchChart(widget.hostname, windowSeconds,
+                            0, nameToChart[newValue]['name']);
+                      });
+                    },
+                    items: <String>[
+                      'CPU',
+                      'Load',
+                      'System RAM',
+                      'Network traffic'
+                    ].map<DropdownMenuItem<String>>((String value) {
+                      return DropdownMenuItem<String>(
+                        value: value,
+                        child: Text(value),
+                      );
+                    }).toList(),
+                  ),
+                ],
+              ),
+              AspectRatio(
+                  aspectRatio: 1.0,
+                  child: GestureDetector(
+                      onHorizontalDragUpdate: (dragDetails) {
                         setState(() {
-                          chartName = newValue;
-                          chartUnit = nameToChart[newValue]['unit'];
-                          windowOffset = 0;
-                          futureChart = fetchChart(widget.hostname,
-                              windowSeconds, 0, nameToChart[newValue]['name']);
+                          double primaryDelta = dragDetails.primaryDelta ?? 0.0;
+                          if (primaryDelta != 0) {
+                            if (primaryDelta.isNegative) {
+                              if (windowOffset > 0) {
+                                windowOffset -= (windowSeconds * 0.01).toInt();
+                              }
+                            } else {
+                              windowOffset += (windowSeconds * 0.01).toInt();
+                            }
+                            futureChart = fetchChart(
+                                widget.hostname,
+                                windowSeconds,
+                                windowOffset,
+                                metricOrAnomalyChoiceIndex == 0
+                                    ? nameToChart[chartName]['name']
+                                    : 'anomalies.probability');
+                          }
                         });
                       },
-                      items: <String>[
-                        'CPU',
-                        'Load',
-                        'System RAM',
-                        'Network traffic'
-                      ].map<DropdownMenuItem<String>>((String value) {
-                        return DropdownMenuItem<String>(
-                          value: value,
-                          child: Text(value),
-                        );
-                      }).toList(),
-                    ),
-                  ],
-                ),
-                AspectRatio(
-                    aspectRatio: 1.0,
-                    child: GestureDetector(
-                        onHorizontalDragUpdate: (dragDelta) {
-                          setState(() {
-                            double primaryDelta = dragDelta.primaryDelta ?? 0.0;
-                            if (primaryDelta != 0) {
-                              if (primaryDelta.isNegative) {
-                                if (windowOffset > 0) {
-                                  windowOffset -=
-                                      (windowSeconds * 0.01).toInt();
-                                }
-                              } else {
-                                windowOffset += (windowSeconds * 0.01).toInt();
-                              }
-                              futureChart = fetchChart(
-                                  widget.hostname,
-                                  windowSeconds,
-                                  windowOffset,
-                                  nameToChart[chartName]['name']);
-                            }
-                          });
-                        },
-                        child: FutureBuilder<Chart>(
-                          future: futureChart,
-                          builder: (context, snapshot) {
-                            if (snapshot.hasData) {
-                              return LineChart(
-                                LineChartData(
-                                  lineBarsData: barDataLines(
-                                      snapshot.data.data, chartName),
-                                  minY: chartName == 'CPU' ? 0 : null,
-                                  maxY: chartName == 'CPU' ? 100 : null,
-                                  backgroundColor:
-                                      Theme.of(context).backgroundColor,
-                                  gridData: FlGridData(
-                                    show: false,
-                                  ),
-                                  borderData: FlBorderData(
-                                    border: const Border(
-                                      bottom: BorderSide(
-                                        color: Colors.black54,
-                                        width: 4,
-                                      ),
-                                      left: BorderSide(
-                                        color: Colors.transparent,
-                                      ),
-                                      right: BorderSide(
-                                        color: Colors.transparent,
-                                      ),
-                                      top: BorderSide(
-                                        color: Colors.transparent,
-                                      ),
+                      child: FutureBuilder<Chart>(
+                        future: futureChart,
+                        builder: (context, snapshot) {
+                          if (snapshot.hasData) {
+                            return LineChart(
+                              LineChartData(
+                                lineBarsData: (metricOrAnomalyChoiceIndex == 0)
+                                    ? barDataLinesMetrics(
+                                    snapshot.data.data, chartName)
+                                    : barDataLinesProbs(
+                                    snapshot.data.data,
+                                    snapshot.data.labels,
+                                    nameToChart[chartName]['name']),
+                                minY: chartName == 'CPU' ||
+                                    metricOrAnomalyChoiceIndex == 1
+                                    ? 0
+                                    : null,
+                                maxY: chartName == 'CPU' ||
+                                    metricOrAnomalyChoiceIndex == 1
+                                    ? 100
+                                    : null,
+                                backgroundColor:
+                                Theme
+                                    .of(context)
+                                    .backgroundColor,
+                                gridData: FlGridData(
+                                  show: false,
+                                ),
+                                borderData: FlBorderData(
+                                  border: const Border(
+                                    bottom: BorderSide(
+                                      color: Colors.black54,
+                                      width: 4,
                                     ),
-                                  ),
-                                  titlesData: FlTitlesData(
-                                    bottomTitles: SideTitles(
-                                        showTitles: true,
-                                        getTextStyles: (value) =>
-                                            Theme.of(context)
-                                                .primaryTextTheme
-                                                .bodyText2,
-                                        getTitles: (timestamp) {
-                                          if ((timestamp / 5).floor() *
-                                                  5 %
-                                                  60 ==
-                                              0) {
-                                            var datetime = DateTime
-                                                .fromMillisecondsSinceEpoch(
-                                                    timestamp.toInt() * 1000);
-                                            return TimeOfDay.fromDateTime(
-                                                    datetime)
-                                                .format(context);
-                                          }
-
-                                          return '';
-                                        }),
-                                    leftTitles: SideTitles(
-                                      showTitles: true,
-                                      getTextStyles: (value) =>
-                                          Theme.of(context)
-                                              .primaryTextTheme
-                                              .bodyText2,
-                                      interval: nameToChart[chartName]
-                                          ['interval'],
-                                      reservedSize: 40,
+                                    left: BorderSide(
+                                      color: Colors.transparent,
+                                    ),
+                                    right: BorderSide(
+                                      color: Colors.transparent,
+                                    ),
+                                    top: BorderSide(
+                                      color: Colors.transparent,
                                     ),
                                   ),
                                 ),
-                              );
-                            } else if (snapshot.hasError) {
-                              return Text("${snapshot.error}");
-                            }
-                            return CircularProgressIndicator();
-                          },
-                        ))),
-                Text(
-                  '(' + chartUnit + ')',
-                  style: Theme.of(context).primaryTextTheme.bodyText2,
-                ),
-                SizedBox(
-                  height: 16,
-                ),
-                FutureBuilder<Chart>(
-                  future: futureChart,
-                  builder: (context, snapshot) {
-                    if (snapshot.hasData) {
-                      return Row(
-                        mainAxisSize: MainAxisSize.max,
-                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                        children: indicators(snapshot.data.labels),
-                      );
-                    } else if (snapshot.hasError) {
-                      return Text("${snapshot.error}");
-                    }
-                    return SizedBox(
-                      height: 1,
+                                titlesData: FlTitlesData(
+                                  bottomTitles: SideTitles(
+                                      showTitles: true,
+                                      getTextStyles: (value) =>
+                                      Theme
+                                          .of(context)
+                                          .primaryTextTheme
+                                          .bodyText2,
+                                      getTitles: (timestamp) {
+                                        if ((timestamp / 5).floor() * 5 % 60 ==
+                                            0) {
+                                          var datetime = DateTime
+                                              .fromMillisecondsSinceEpoch(
+                                              timestamp.toInt() * 1000);
+                                          return TimeOfDay.fromDateTime(
+                                              datetime)
+                                              .format(context);
+                                        }
+
+                                        return '';
+                                      }),
+                                  leftTitles: SideTitles(
+                                    showTitles: true,
+                                    getTextStyles: (value) =>
+                                    Theme
+                                        .of(context)
+                                        .primaryTextTheme
+                                        .bodyText2,
+                                    interval: nameToChart[chartName]
+                                    ['interval'],
+                                    reservedSize: 40,
+                                  ),
+                                ),
+                              ),
+                            );
+                          } else if (snapshot.hasError) {
+                            return Text("${snapshot.error}");
+                          }
+                          return CircularProgressIndicator();
+                        },
+                      ))),
+              Text(
+                '(' + chartUnit + ')',
+                style: Theme
+                    .of(context)
+                    .primaryTextTheme
+                    .bodyText2,
+              ),
+              SizedBox(
+                height: 16,
+              ),
+              FutureBuilder<Chart>(
+                future: futureChart,
+                builder: (context, snapshot) {
+                  if (snapshot.hasData) {
+                    return Row(
+                      mainAxisSize: MainAxisSize.max,
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: indicators(
+                          snapshot.data.labels, metricOrAnomalyChoiceIndex),
                     );
-                  },
-                ),
-              ],
-            )));
+                  } else if (snapshot.hasError) {
+                    return Text("${snapshot.error}");
+                  }
+                  return SizedBox(
+                    height: 1,
+                  );
+                },
+              ),
+              SizedBox(
+                height: 16,
+              ),
+              Center(
+                  child: Wrap(
+                    children: [
+                      ChoiceChip(
+                        label: Text(
+                          'Metrics',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        selected: metricOrAnomalyChoiceIndex == 0,
+                        onSelected: (value) {
+                          metricOrAnomalyChoiceIndex = value ? 0 : -1;
+                        },
+                      ),
+                      const SizedBox(
+                        width: 8,
+                      ),
+                      ChoiceChip(
+                        label: Text('Anomaly Probability',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                            )),
+                        selected: metricOrAnomalyChoiceIndex == 1,
+                        onSelected: (value) {
+                          metricOrAnomalyChoiceIndex = value ? 1 : -1;
+                        },
+                      ),
+                    ],
+                  ))
+            ],
+          )),
+    );
   }
 }
 
-Future<Chart> fetchChart(
-    String hostname, int time, int before, String chartName) async {
+Future<Chart> fetchChart(String hostname, int time, int before,
+    String chartName) async {
   final response = await http.get(
       Uri.http("101.201.236.53:19999", "/host/" + hostname + "/api/v1/data", {
-    "chart": chartName,
-    "after": "-" + time.toString(),
-    "before": "-" + before.toString(),
-    "options": "nonzero"
-  }));
+        "chart": chartName,
+        "after": "-" + time.toString(),
+        "before": "-" + before.toString(),
+        "options": "nonzero"
+      }));
   if (response.statusCode == 200) {
     return Chart().fromJson(jsonDecode(response.body));
   } else {
@@ -251,7 +321,9 @@ Future<Chart> fetchChart(
   }
 }
 
-List<LineChartBarData> barDataLines(List<Data> data, String chartName) {
+List<LineChartBarData> barDataLinesMetrics(List<Data> data, String chartName) {
+  if (data[0].values.length > 5)
+    return null;
   final colors = <Color>[
     Color(0xaaF72585),
     Color(0xaa3F37C9),
@@ -285,8 +357,41 @@ List<LineChartBarData> barDataLines(List<Data> data, String chartName) {
   return lines;
 }
 
-List<Indicator> indicators(List<String> labels) {
-  if (labels == null) return [];
+List<LineChartBarData> barDataLinesProbs(List<Data> data, List<String> labels,
+    String chart) {
+  int index = 0;
+  for (int i = 0; i < labels.length; i++) {
+    if (chart + '_prob' == labels[i]) {
+      index = i;
+      break;
+    }
+  }
+  final color = Color(0xff4895EF);
+  var lines = <LineChartBarData>[];
+  var spots = <FlSpot>[];
+  for (int j = 0; j < data.length; j++) {
+  spots.add(
+  FlSpot(data[j].values[0].toDouble(), data[j].values[index].toDouble()));
+  }
+
+  LineChartBarData line = LineChartBarData(
+  spots: spots,
+  isCurved: true,
+  curveSmoothness: 0.5,
+  dotData: FlDotData(
+  show: false,
+  ),
+  colors: [color],
+  );
+  lines.add(line);
+
+  return
+  lines;
+}
+
+List<Indicator> indicators(List<String> labels,
+    int metricOrAnomalyChoiceIndex) {
+  if (labels == null || labels.length > 6) return [];
 
   final colors = <Color>[
     Color(0xffF72585),
@@ -296,11 +401,18 @@ List<Indicator> indicators(List<String> labels) {
     Colors.lightGreen,
   ];
   var ret = <Indicator>[];
-  for (int i = 1; i < labels.length; i++) {
+  if (metricOrAnomalyChoiceIndex == 1) {
     ret.add(Indicator(
-      color: colors[i - 1],
-      text: labels[i],
+      color: colors[2],
+      text: 'Probability',
     ));
+  } else {
+    for (int i = 1; i < labels.length; i++) {
+      ret.add(Indicator(
+        color: colors[i - 1],
+        text: labels[i],
+      ));
+    }
   }
   return ret;
 }
