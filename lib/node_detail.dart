@@ -20,6 +20,7 @@ class NodeDetailPage extends StatefulWidget {
 
 class _NodeDetailState extends State<NodeDetailPage> {
   Future<Chart> futureChart;
+  Future<Chart> futureAnomaly;
   String chartName = "CPU";
   String viewingChart = "system.cpu";
   String chartUnit = "%";
@@ -33,7 +34,11 @@ class _NodeDetailState extends State<NodeDetailPage> {
   final nameToChart = {
     'CPU': {'name': 'system.cpu', 'unit': '%', 'interval': 20.0},
     'Load': {'name': 'system.load', 'unit': 'processes', 'interval': 0.1},
-    'Processes': {'name': 'system.processes', 'unit': 'processes', 'interval': 5.0},
+    'Processes': {
+      'name': 'system.processes',
+      'unit': 'processes',
+      'interval': 5.0
+    },
     'System RAM': {'name': 'system.ram', 'unit': 'GB', 'interval': 5.0},
     'Network traffic': {
       'name': 'system.ip',
@@ -47,6 +52,8 @@ class _NodeDetailState extends State<NodeDetailPage> {
     super.initState();
     metricOrAnomalyChoiceIndex = 0;
     futureChart = fetchChart(widget.hostname, windowSeconds, 0, 'system.cpu');
+    futureAnomaly =
+        fetchChart(widget.hostname, windowSeconds * 10, 0, 'anomalies.anomaly');
     timer = Timer.periodic(
         Duration(seconds: 1),
         (Timer t) => setState(() {
@@ -220,30 +227,13 @@ class _NodeDetailState extends State<NodeDetailPage> {
                         },
                       ))),
               Text(
-                '(' + (metricOrAnomalyChoiceIndex == 1? '%' : chartUnit) + ')',
+                '(' + (metricOrAnomalyChoiceIndex == 1 ? '%' : chartUnit) + ')',
                 style: Theme.of(context).primaryTextTheme.bodyText2,
               ),
               SizedBox(
                 height: 16,
               ),
-              FutureBuilder<Chart>(
-                future: futureChart,
-                builder: (context, snapshot) {
-                  if (snapshot.hasData) {
-                    return Row(
-                      mainAxisSize: MainAxisSize.max,
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                      children: indicators(
-                          snapshot.data.labels, metricOrAnomalyChoiceIndex),
-                    );
-                  } else if (snapshot.hasError) {
-                    return Text("${snapshot.error}");
-                  }
-                  return SizedBox(
-                    height: 1,
-                  );
-                },
-              ),
+              labelsToIndicators(futureChart),
               SizedBox(
                 height: 16,
               ),
@@ -278,7 +268,11 @@ class _NodeDetailState extends State<NodeDetailPage> {
                     },
                   ),
                 ],
-              ))
+              )),
+              SizedBox(
+                height: 16,
+              ),
+              anomalyList(futureAnomaly, nameToChart[chartName]['name']),
             ],
           )),
     );
@@ -349,8 +343,7 @@ List<LineChartBarData> barDataLinesProbs(
   var lines = <LineChartBarData>[];
   var spots = <FlSpot>[];
   for (int j = 0; j < data.length; j++) {
-    if (data[j].values[index] == null)
-      continue;
+    if (data[j].values[index] == null) continue;
     spots.add(
         FlSpot(data[j].values[0].toDouble(), data[j].values[index].toDouble()));
   }
@@ -369,8 +362,7 @@ List<LineChartBarData> barDataLinesProbs(
   return lines;
 }
 
-List<Indicator> indicators(
-    List<String> labels, int metricOrAnomalyChoiceIndex) {
+List<Indicator> indicators(List<String> labels) {
   if (labels == null || labels.length > 6) return [];
 
   final colors = <Color>[
@@ -381,18 +373,103 @@ List<Indicator> indicators(
     Colors.lightGreen,
   ];
   var ret = <Indicator>[];
-  if (metricOrAnomalyChoiceIndex == 1) {
+
+  for (int i = 1; i < labels.length; i++) {
     ret.add(Indicator(
-      color: colors[2],
-      text: 'Probability',
+      color: colors[i - 1],
+      text: labels[i],
     ));
-  } else {
-    for (int i = 1; i < labels.length; i++) {
-      ret.add(Indicator(
-        color: colors[i - 1],
-        text: labels[i],
-      ));
-    }
   }
+
   return ret;
+}
+
+FutureBuilder<Chart> labelsToIndicators(Future<Chart> futureChart) {
+  return FutureBuilder<Chart>(
+      future: futureChart,
+      builder: (context, snapshot) {
+        if (snapshot.hasData) {
+          return Row(
+            mainAxisSize: MainAxisSize.max,
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: indicators(snapshot.data.labels),
+          );
+        } else if (snapshot.hasError) {
+          return Text("${snapshot.error}");
+        }
+        return SizedBox(
+          height: 1,
+        );
+      });
+}
+
+FutureBuilder<Chart> anomalyList(Future<Chart> futureAnomaly, String chart) {
+  return FutureBuilder<Chart>(
+      future: futureAnomaly,
+      builder: (context, snapshot) {
+        if (snapshot.hasData) {
+          var anomalyData = snapshot.data.data;
+          var anomalyLabels = snapshot.data.labels;
+
+          int index = 0;
+          for (int i = 0; i < anomalyLabels.length; i++) {
+            if (chart + '_anomaly' == anomalyLabels[i]) {
+              index = i;
+              break;
+            }
+          }
+
+          var timestamps = <num>[];
+          bool prev = false;
+          for (int j = 0; j < anomalyData.length; j++) {
+            if (anomalyData[j].values[index] == 1) {
+              if (prev == false)
+                timestamps.add(anomalyData[j].values[0]);
+              prev = true;
+            } else {
+              prev = false;
+            }
+          }
+
+          if (timestamps.isEmpty)
+            return Center(
+              child: Text('No anomalies detected in 20 minutes', style: Theme.of(context)
+                  .primaryTextTheme
+                  .bodyText2,),
+            );
+          return Container(
+            height: 32,
+            width: 320,
+            child: Row(
+              children: [
+                Text('Anomalies in 20 m: ', style: Theme.of(context)
+                    .primaryTextTheme
+                    .bodyText2,),
+                Container(
+                  width: 200,
+                  child: ListView.builder(
+                      scrollDirection: Axis.horizontal,
+                      itemCount: timestamps.length,
+                      itemBuilder: (BuildContext context, int i) {
+                        return Container(
+                          height: 16,
+                          child: Center(
+                              child: Text(TimeOfDay.fromDateTime(
+                                  DateTime.fromMillisecondsSinceEpoch(
+                                      timestamps[i].toInt() * 1000))
+                                  .format(context), style: Theme.of(context)
+                                  .primaryTextTheme
+                                  .bodyText2,)
+                          ),
+                        );
+                      }),
+                ),
+              ],
+            )
+          );
+        } else if (snapshot.hasError) {
+          return Text("${snapshot.error}");
+        }
+        return Text('Detecting anomalies...');
+      });
 }

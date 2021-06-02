@@ -100,7 +100,7 @@ class _OverviewState extends State<OverviewPage> {
                                     child: Text(
                                       snapshot.data.mirroredHosts[index],
                                       style: TextStyle(
-                                        fontSize: 20,
+                                        fontSize: 16,
                                         fontWeight: FontWeight.bold,
                                       ),
                                     ),
