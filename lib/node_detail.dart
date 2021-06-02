@@ -21,6 +21,7 @@ class NodeDetailPage extends StatefulWidget {
 class _NodeDetailState extends State<NodeDetailPage> {
   Future<Chart> futureChart;
   String chartName = "CPU";
+  String viewingChart = "system.cpu";
   String chartUnit = "%";
 
   Timer timer;
@@ -32,6 +33,7 @@ class _NodeDetailState extends State<NodeDetailPage> {
   final nameToChart = {
     'CPU': {'name': 'system.cpu', 'unit': '%', 'interval': 20.0},
     'Load': {'name': 'system.load', 'unit': 'processes', 'interval': 0.1},
+    'Processes': {'name': 'system.processes', 'unit': 'processes', 'interval': 5.0},
     'System RAM': {'name': 'system.ram', 'unit': 'GB', 'interval': 5.0},
     'Network traffic': {
       'name': 'system.ip',
@@ -47,15 +49,9 @@ class _NodeDetailState extends State<NodeDetailPage> {
     futureChart = fetchChart(widget.hostname, windowSeconds, 0, 'system.cpu');
     timer = Timer.periodic(
         Duration(seconds: 1),
-            (Timer t) =>
-            setState(() {
+        (Timer t) => setState(() {
               futureChart = fetchChart(
-                  widget.hostname,
-                  windowSeconds,
-                  windowOffset,
-                  metricOrAnomalyChoiceIndex == 0
-                      ? nameToChart[chartName]['name']
-                      : 'anomalies.probability');
+                  widget.hostname, windowSeconds, windowOffset, viewingChart);
             }));
   }
 
@@ -79,9 +75,7 @@ class _NodeDetailState extends State<NodeDetailPage> {
                 Navigator.pushNamed(context, '/');
               }),
         ],
-        iconTheme: Theme
-            .of(context)
-            .iconTheme,
+        iconTheme: Theme.of(context).iconTheme,
       ),
       body: Container(
           padding: const EdgeInsets.all(20),
@@ -92,17 +86,11 @@ class _NodeDetailState extends State<NodeDetailPage> {
                 children: <Widget>[
                   Text(
                     'Dashboard of   ',
-                    style: Theme
-                        .of(context)
-                        .primaryTextTheme
-                        .bodyText1,
+                    style: Theme.of(context).primaryTextTheme.bodyText1,
                   ),
                   DropdownButton(
                     value: chartName,
-                    style: Theme
-                        .of(context)
-                        .primaryTextTheme
-                        .bodyText1,
+                    style: Theme.of(context).primaryTextTheme.bodyText1,
                     icon: const Icon(Icons.arrow_drop_down_circle),
                     onChanged: (String newValue) {
                       setState(() {
@@ -110,13 +98,15 @@ class _NodeDetailState extends State<NodeDetailPage> {
                         chartUnit = nameToChart[newValue]['unit'];
                         windowOffset = 0;
                         metricOrAnomalyChoiceIndex = 0;
-                        futureChart = fetchChart(widget.hostname, windowSeconds,
-                            0, nameToChart[newValue]['name']);
+                        viewingChart = nameToChart[newValue]['name'];
+                        futureChart = fetchChart(
+                            widget.hostname, windowSeconds, 0, viewingChart);
                       });
                     },
                     items: <String>[
                       'CPU',
                       'Load',
+                      'Processes',
                       'System RAM',
                       'Network traffic'
                     ].map<DropdownMenuItem<String>>((String value) {
@@ -142,13 +132,8 @@ class _NodeDetailState extends State<NodeDetailPage> {
                             } else {
                               windowOffset += (windowSeconds * 0.01).toInt();
                             }
-                            futureChart = fetchChart(
-                                widget.hostname,
-                                windowSeconds,
-                                windowOffset,
-                                metricOrAnomalyChoiceIndex == 0
-                                    ? nameToChart[chartName]['name']
-                                    : 'anomalies.probability');
+                            futureChart = fetchChart(widget.hostname,
+                                windowSeconds, windowOffset, viewingChart);
                           }
                         });
                       },
@@ -160,23 +145,21 @@ class _NodeDetailState extends State<NodeDetailPage> {
                               LineChartData(
                                 lineBarsData: (metricOrAnomalyChoiceIndex == 0)
                                     ? barDataLinesMetrics(
-                                    snapshot.data.data, chartName)
+                                        snapshot.data.data, chartName)
                                     : barDataLinesProbs(
-                                    snapshot.data.data,
-                                    snapshot.data.labels,
-                                    nameToChart[chartName]['name']),
+                                        snapshot.data.data,
+                                        snapshot.data.labels,
+                                        nameToChart[chartName]['name']),
                                 minY: chartName == 'CPU' ||
-                                    metricOrAnomalyChoiceIndex == 1
+                                        metricOrAnomalyChoiceIndex == 1
                                     ? 0
                                     : null,
                                 maxY: chartName == 'CPU' ||
-                                    metricOrAnomalyChoiceIndex == 1
+                                        metricOrAnomalyChoiceIndex == 1
                                     ? 100
                                     : null,
                                 backgroundColor:
-                                Theme
-                                    .of(context)
-                                    .backgroundColor,
+                                    Theme.of(context).backgroundColor,
                                 gridData: FlGridData(
                                   show: false,
                                 ),
@@ -201,18 +184,17 @@ class _NodeDetailState extends State<NodeDetailPage> {
                                   bottomTitles: SideTitles(
                                       showTitles: true,
                                       getTextStyles: (value) =>
-                                      Theme
-                                          .of(context)
-                                          .primaryTextTheme
-                                          .bodyText2,
+                                          Theme.of(context)
+                                              .primaryTextTheme
+                                              .bodyText2,
                                       getTitles: (timestamp) {
                                         if ((timestamp / 5).floor() * 5 % 60 ==
                                             0) {
                                           var datetime = DateTime
                                               .fromMillisecondsSinceEpoch(
-                                              timestamp.toInt() * 1000);
+                                                  timestamp.toInt() * 1000);
                                           return TimeOfDay.fromDateTime(
-                                              datetime)
+                                                  datetime)
                                               .format(context);
                                         }
 
@@ -220,13 +202,12 @@ class _NodeDetailState extends State<NodeDetailPage> {
                                       }),
                                   leftTitles: SideTitles(
                                     showTitles: true,
-                                    getTextStyles: (value) =>
-                                    Theme
-                                        .of(context)
+                                    getTextStyles: (value) => Theme.of(context)
                                         .primaryTextTheme
                                         .bodyText2,
-                                    interval: nameToChart[chartName]
-                                    ['interval'],
+                                    interval: metricOrAnomalyChoiceIndex == 1
+                                        ? 20.0
+                                        : nameToChart[chartName]['interval'],
                                     reservedSize: 40,
                                   ),
                                 ),
@@ -239,11 +220,8 @@ class _NodeDetailState extends State<NodeDetailPage> {
                         },
                       ))),
               Text(
-                '(' + chartUnit + ')',
-                style: Theme
-                    .of(context)
-                    .primaryTextTheme
-                    .bodyText2,
+                '(' + (metricOrAnomalyChoiceIndex == 1? '%' : chartUnit) + ')',
+                style: Theme.of(context).primaryTextTheme.bodyText2,
               ),
               SizedBox(
                 height: 16,
@@ -271,49 +249,51 @@ class _NodeDetailState extends State<NodeDetailPage> {
               ),
               Center(
                   child: Wrap(
-                    children: [
-                      ChoiceChip(
-                        label: Text(
-                          'Metrics',
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        selected: metricOrAnomalyChoiceIndex == 0,
-                        onSelected: (value) {
-                          metricOrAnomalyChoiceIndex = value ? 0 : -1;
-                        },
+                children: [
+                  ChoiceChip(
+                    label: Text(
+                      'Metrics',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
                       ),
-                      const SizedBox(
-                        width: 8,
-                      ),
-                      ChoiceChip(
-                        label: Text('Anomaly Probability',
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                            )),
-                        selected: metricOrAnomalyChoiceIndex == 1,
-                        onSelected: (value) {
-                          metricOrAnomalyChoiceIndex = value ? 1 : -1;
-                        },
-                      ),
-                    ],
-                  ))
+                    ),
+                    selected: metricOrAnomalyChoiceIndex == 0,
+                    onSelected: (value) {
+                      metricOrAnomalyChoiceIndex = value ? 0 : -1;
+                      viewingChart = nameToChart[chartName]['name'];
+                    },
+                  ),
+                  const SizedBox(
+                    width: 8,
+                  ),
+                  ChoiceChip(
+                    label: Text('Anomaly Probability',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                        )),
+                    selected: metricOrAnomalyChoiceIndex == 1,
+                    onSelected: (value) {
+                      metricOrAnomalyChoiceIndex = value ? 1 : -1;
+                      viewingChart = 'anomalies.probability';
+                    },
+                  ),
+                ],
+              ))
             ],
           )),
     );
   }
 }
 
-Future<Chart> fetchChart(String hostname, int time, int before,
-    String chartName) async {
+Future<Chart> fetchChart(
+    String hostname, int time, int before, String chartName) async {
   final response = await http.get(
       Uri.http("101.201.236.53:19999", "/host/" + hostname + "/api/v1/data", {
-        "chart": chartName,
-        "after": "-" + time.toString(),
-        "before": "-" + before.toString(),
-        "options": "nonzero"
-      }));
+    "chart": chartName,
+    "after": "-" + time.toString(),
+    "before": "-" + before.toString(),
+    "options": "nonzero"
+  }));
   if (response.statusCode == 200) {
     return Chart().fromJson(jsonDecode(response.body));
   } else {
@@ -322,8 +302,7 @@ Future<Chart> fetchChart(String hostname, int time, int before,
 }
 
 List<LineChartBarData> barDataLinesMetrics(List<Data> data, String chartName) {
-  if (data[0].values.length > 5)
-    return null;
+  if (data[0].values.length > 5) return null;
   final colors = <Color>[
     Color(0xaaF72585),
     Color(0xaa3F37C9),
@@ -357,8 +336,8 @@ List<LineChartBarData> barDataLinesMetrics(List<Data> data, String chartName) {
   return lines;
 }
 
-List<LineChartBarData> barDataLinesProbs(List<Data> data, List<String> labels,
-    String chart) {
+List<LineChartBarData> barDataLinesProbs(
+    List<Data> data, List<String> labels, String chart) {
   int index = 0;
   for (int i = 0; i < labels.length; i++) {
     if (chart + '_prob' == labels[i]) {
@@ -370,27 +349,28 @@ List<LineChartBarData> barDataLinesProbs(List<Data> data, List<String> labels,
   var lines = <LineChartBarData>[];
   var spots = <FlSpot>[];
   for (int j = 0; j < data.length; j++) {
-  spots.add(
-  FlSpot(data[j].values[0].toDouble(), data[j].values[index].toDouble()));
+    if (data[j].values[index] == null)
+      continue;
+    spots.add(
+        FlSpot(data[j].values[0].toDouble(), data[j].values[index].toDouble()));
   }
 
   LineChartBarData line = LineChartBarData(
-  spots: spots,
-  isCurved: true,
-  curveSmoothness: 0.5,
-  dotData: FlDotData(
-  show: false,
-  ),
-  colors: [color],
+    spots: spots,
+    isCurved: true,
+    curveSmoothness: 0.5,
+    dotData: FlDotData(
+      show: false,
+    ),
+    colors: [color],
   );
   lines.add(line);
 
-  return
-  lines;
+  return lines;
 }
 
-List<Indicator> indicators(List<String> labels,
-    int metricOrAnomalyChoiceIndex) {
+List<Indicator> indicators(
+    List<String> labels, int metricOrAnomalyChoiceIndex) {
   if (labels == null || labels.length > 6) return [];
 
   final colors = <Color>[
