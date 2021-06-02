@@ -94,7 +94,7 @@ class _NodeListState extends State<NodeListPage> {
 
 Future<Info> fetchInfo() async {
   final response =
-      await http.get(Uri.http("166.111.69.76:19999", "/api/v1/info"));
+      await http.get(Uri.http("101.201.236.53:19999", "/api/v1/info"));
   if (response.statusCode == 200) {
     return Info().fromJson(jsonDecode(response.body));
   } else {

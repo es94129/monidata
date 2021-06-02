@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+
 import 'package:http/http.dart' as http;
 import 'package:fl_chart/fl_chart.dart';
 
@@ -24,6 +25,7 @@ class _NodeDetailState extends State<NodeDetailPage> {
 
   Timer timer;
   final windowSeconds = 120;
+  int windowOffset = 0;
 
   final nameToChart = {
     'CPU': {'name': 'system.cpu', 'unit': '%', 'interval': 20.0},
@@ -39,12 +41,12 @@ class _NodeDetailState extends State<NodeDetailPage> {
   @override
   void initState() {
     super.initState();
-    futureChart = fetchChart(widget.hostname, windowSeconds, 'system.cpu');
+    futureChart = fetchChart(widget.hostname, windowSeconds, 0, 'system.cpu');
     timer = Timer.periodic(
         Duration(seconds: 1),
         (Timer t) => setState(() {
               futureChart = fetchChart(widget.hostname, windowSeconds,
-                  nameToChart[chartName]['name']);
+                  windowOffset, nameToChart[chartName]['name']);
             }));
   }
 
@@ -89,8 +91,9 @@ class _NodeDetailState extends State<NodeDetailPage> {
                         setState(() {
                           chartName = newValue;
                           chartUnit = nameToChart[newValue]['unit'];
+                          windowOffset = 0;
                           futureChart = fetchChart(widget.hostname,
-                              windowSeconds, nameToChart[newValue]['name']);
+                              windowSeconds, 0, nameToChart[newValue]['name']);
                         });
                       },
                       items: <String>[
@@ -109,69 +112,100 @@ class _NodeDetailState extends State<NodeDetailPage> {
                 ),
                 AspectRatio(
                     aspectRatio: 1.0,
-                    child: FutureBuilder<Chart>(
-                      future: futureChart,
-                      builder: (context, snapshot) {
-                        if (snapshot.hasData) {
-                          return LineChart(LineChartData(
-                            lineBarsData:
-                                barDataLines(snapshot.data.data, chartName),
-                            minY: chartName == 'CPU' ? 0 : null,
-                            maxY: chartName == 'CPU' ? 100 : null,
-                            backgroundColor: Theme.of(context).backgroundColor,
-                            gridData: FlGridData(
-                              show: false,
-                            ),
-                            borderData: FlBorderData(
-                              border: const Border(
-                                bottom: BorderSide(
-                                  color: Colors.black54,
-                                  width: 4,
-                                ),
-                                left: BorderSide(
-                                  color: Colors.transparent,
-                                ),
-                                right: BorderSide(
-                                  color: Colors.transparent,
-                                ),
-                                top: BorderSide(
-                                  color: Colors.transparent,
-                                ),
-                              ),
-                            ),
-                            titlesData: FlTitlesData(
-                              bottomTitles: SideTitles(
-                                  showTitles: true,
-                                  getTextStyles: (value) => Theme.of(context)
-                                      .primaryTextTheme
-                                      .bodyText2,
-                                  getTitles: (timestamp) {
-                                    if ((timestamp / 5).floor() * 5 % 60 == 0) {
-                                      var datetime =
-                                          DateTime.fromMillisecondsSinceEpoch(
-                                              timestamp.toInt() * 1000);
-                                      return TimeOfDay.fromDateTime(datetime)
-                                          .format(context);
-                                    }
+                    child: GestureDetector(
+                        onHorizontalDragUpdate: (dragDelta) {
+                          setState(() {
+                            double primaryDelta = dragDelta.primaryDelta ?? 0.0;
+                            if (primaryDelta != 0) {
+                              if (primaryDelta.isNegative) {
+                                if (windowOffset > 0) {
+                                  windowOffset -=
+                                      (windowSeconds * 0.01).toInt();
+                                }
+                              } else {
+                                windowOffset += (windowSeconds * 0.01).toInt();
+                              }
+                              futureChart = fetchChart(
+                                  widget.hostname,
+                                  windowSeconds,
+                                  windowOffset,
+                                  nameToChart[chartName]['name']);
+                            }
+                          });
+                        },
+                        child: FutureBuilder<Chart>(
+                          future: futureChart,
+                          builder: (context, snapshot) {
+                            if (snapshot.hasData) {
+                              return LineChart(
+                                LineChartData(
+                                  lineBarsData: barDataLines(
+                                      snapshot.data.data, chartName),
+                                  minY: chartName == 'CPU' ? 0 : null,
+                                  maxY: chartName == 'CPU' ? 100 : null,
+                                  backgroundColor:
+                                      Theme.of(context).backgroundColor,
+                                  gridData: FlGridData(
+                                    show: false,
+                                  ),
+                                  borderData: FlBorderData(
+                                    border: const Border(
+                                      bottom: BorderSide(
+                                        color: Colors.black54,
+                                        width: 4,
+                                      ),
+                                      left: BorderSide(
+                                        color: Colors.transparent,
+                                      ),
+                                      right: BorderSide(
+                                        color: Colors.transparent,
+                                      ),
+                                      top: BorderSide(
+                                        color: Colors.transparent,
+                                      ),
+                                    ),
+                                  ),
+                                  titlesData: FlTitlesData(
+                                    bottomTitles: SideTitles(
+                                        showTitles: true,
+                                        getTextStyles: (value) =>
+                                            Theme.of(context)
+                                                .primaryTextTheme
+                                                .bodyText2,
+                                        getTitles: (timestamp) {
+                                          if ((timestamp / 5).floor() *
+                                                  5 %
+                                                  60 ==
+                                              0) {
+                                            var datetime = DateTime
+                                                .fromMillisecondsSinceEpoch(
+                                                    timestamp.toInt() * 1000);
+                                            return TimeOfDay.fromDateTime(
+                                                    datetime)
+                                                .format(context);
+                                          }
 
-                                    return '';
-                                  }),
-                              leftTitles: SideTitles(
-                                showTitles: true,
-                                getTextStyles: (value) => Theme.of(context)
-                                    .primaryTextTheme
-                                    .bodyText2,
-                                interval: nameToChart[chartName]['interval'],
-                                reservedSize: 40,
-                              ),
-                            ),
-                          ));
-                        } else if (snapshot.hasError) {
-                          return Text("${snapshot.error}");
-                        }
-                        return CircularProgressIndicator();
-                      },
-                    )),
+                                          return '';
+                                        }),
+                                    leftTitles: SideTitles(
+                                      showTitles: true,
+                                      getTextStyles: (value) =>
+                                          Theme.of(context)
+                                              .primaryTextTheme
+                                              .bodyText2,
+                                      interval: nameToChart[chartName]
+                                          ['interval'],
+                                      reservedSize: 40,
+                                    ),
+                                  ),
+                                ),
+                              );
+                            } else if (snapshot.hasError) {
+                              return Text("${snapshot.error}");
+                            }
+                            return CircularProgressIndicator();
+                          },
+                        ))),
                 Text(
                   '(' + chartUnit + ')',
                   style: Theme.of(context).primaryTextTheme.bodyText2,
@@ -201,11 +235,13 @@ class _NodeDetailState extends State<NodeDetailPage> {
   }
 }
 
-Future<Chart> fetchChart(String hostname, int time, String chartName) async {
-  final response = await http.get(Uri.http(
-      "166.111.69.76:19999", "/host/" + hostname + "/api/v1/data", {
+Future<Chart> fetchChart(
+    String hostname, int time, int before, String chartName) async {
+  final response = await http.get(
+      Uri.http("101.201.236.53:19999", "/host/" + hostname + "/api/v1/data", {
     "chart": chartName,
     "after": "-" + time.toString(),
+    "before": "-" + before.toString(),
     "options": "nonzero"
   }));
   if (response.statusCode == 200) {

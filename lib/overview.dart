@@ -21,7 +21,7 @@ class _OverviewState extends State<OverviewPage> {
   @override
   void initState() {
     super.initState();
-    futureInfo = fetchInfo('master');
+    futureInfo = fetchInfo('iZ2zefgt37lh254ur1mj5aZ');
   }
 
   @override
@@ -260,7 +260,7 @@ class _NodeOverviewState extends State<NodeOverview> {
 
 Future<Info> fetchInfo(String hostname) async {
   final response = await http.get(
-      Uri.http("166.111.69.76:19999", "/host/" + hostname + "/api/v1/info"));
+      Uri.http("101.201.236.53:19999", "/host/" + hostname + "/api/v1/info"));
   if (response.statusCode == 200) {
     return Info().fromJson(jsonDecode(response.body));
   } else {
@@ -270,7 +270,7 @@ Future<Info> fetchInfo(String hostname) async {
 
 Future<Chart> fetchChart(String hostname, int time, String chartName) async {
   final response = await http.get(Uri.http(
-      "166.111.69.76:19999", "/host/" + hostname + "/api/v1/data", {
+      "101.201.236.53:19999", "/host/" + hostname + "/api/v1/data", {
     "chart": chartName,
     "after": "-" + time.toString(),
     "options": "nonzero"
