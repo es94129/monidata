@@ -8,6 +8,13 @@ import 'package:fl_chart/fl_chart.dart';
 
 import 'indicator.dart';
 import 'netdata/chart.dart';
+import 'service/notification_service.dart';
+
+String timestampToDateTime(double timestamp, BuildContext context) {
+  return TimeOfDay.fromDateTime(
+          DateTime.fromMillisecondsSinceEpoch(timestamp.toInt() * 1000))
+      .format(context);
+}
 
 class NodeDetailPage extends StatefulWidget {
   final String hostname;
@@ -24,6 +31,8 @@ class _NodeDetailState extends State<NodeDetailPage> {
   String chartName = "CPU";
   String viewingChart = "system.cpu";
   String chartUnit = "%";
+
+  bool notified = false;
 
   Timer timer;
   int windowSeconds = 120;
@@ -197,12 +206,8 @@ class _NodeDetailState extends State<NodeDetailPage> {
                                       getTitles: (timestamp) {
                                         if ((timestamp / 5).floor() * 5 % 60 ==
                                             0) {
-                                          var datetime = DateTime
-                                              .fromMillisecondsSinceEpoch(
-                                                  timestamp.toInt() * 1000);
-                                          return TimeOfDay.fromDateTime(
-                                                  datetime)
-                                              .format(context);
+                                          return timestampToDateTime(
+                                              timestamp, context);
                                         }
 
                                         return '';
@@ -276,6 +281,88 @@ class _NodeDetailState extends State<NodeDetailPage> {
             ],
           )),
     );
+  }
+
+  FutureBuilder<Chart> anomalyList(Future<Chart> futureAnomaly, String chart) {
+    return FutureBuilder<Chart>(
+        future: futureAnomaly,
+        builder: (context, snapshot) {
+          if (snapshot.hasData) {
+            var anomalyData = snapshot.data.data;
+            var anomalyLabels = snapshot.data.labels;
+
+            int index = 0;
+            for (int i = 0; i < anomalyLabels.length; i++) {
+              if (chart + '_anomaly' == anomalyLabels[i]) {
+                index = i;
+                break;
+              }
+            }
+
+            var timestamps = <num>[];
+            bool prev = false;
+            for (int j = 0; j < anomalyData.length; j++) {
+              if (anomalyData[j].values[index] == 1) {
+                if (prev == false) timestamps.add(anomalyData[j].values[0]);
+                prev = true;
+              } else {
+                prev = false;
+              }
+
+              if (notified == true) continue;
+
+              for (int i = 1; i < anomalyData[0].values.length; i++) {
+                if (anomalyData[j].values[i] == 1 && notified == false) {
+                  NotificationService().showNotification('Anomaly detected for ' +
+                      anomalyLabels[i] +
+                      ' at ' +
+                      timestampToDateTime(anomalyData[j].values[0].toDouble(), context));
+                  notified = true;
+                  break;
+                }
+              }
+            }
+
+            if (timestamps.isEmpty)
+              return Center(
+                child: Text(
+                  'No anomalies detected in 20 minutes',
+                  style: Theme.of(context).primaryTextTheme.bodyText2,
+                ),
+              );
+            return Container(
+                height: 32,
+                width: 320,
+                child: Row(
+                  children: [
+                    Text(
+                      'Anomalies in 20 m: ',
+                      style: Theme.of(context).primaryTextTheme.bodyText2,
+                    ),
+                    Container(
+                      width: 200,
+                      child: ListView.builder(
+                          scrollDirection: Axis.horizontal,
+                          itemCount: timestamps.length,
+                          itemBuilder: (BuildContext context, int i) {
+                            return Container(
+                              height: 16,
+                              child: Center(
+                                  child: Text(
+                                    timestampToDateTime(timestamps[i].toDouble(), context),
+                                    style:
+                                    Theme.of(context).primaryTextTheme.bodyText2,
+                                  )),
+                            );
+                          }),
+                    ),
+                  ],
+                ));
+          } else if (snapshot.hasError) {
+            return Text("${snapshot.error}");
+          }
+          return Text('Detecting anomalies...');
+        });
   }
 }
 
@@ -403,73 +490,19 @@ FutureBuilder<Chart> labelsToIndicators(Future<Chart> futureChart) {
       });
 }
 
-FutureBuilder<Chart> anomalyList(Future<Chart> futureAnomaly, String chart) {
-  return FutureBuilder<Chart>(
-      future: futureAnomaly,
-      builder: (context, snapshot) {
-        if (snapshot.hasData) {
-          var anomalyData = snapshot.data.data;
-          var anomalyLabels = snapshot.data.labels;
-
-          int index = 0;
-          for (int i = 0; i < anomalyLabels.length; i++) {
-            if (chart + '_anomaly' == anomalyLabels[i]) {
-              index = i;
-              break;
-            }
-          }
-
-          var timestamps = <num>[];
-          bool prev = false;
-          for (int j = 0; j < anomalyData.length; j++) {
-            if (anomalyData[j].values[index] == 1) {
-              if (prev == false)
-                timestamps.add(anomalyData[j].values[0]);
-              prev = true;
-            } else {
-              prev = false;
-            }
-          }
-
-          if (timestamps.isEmpty)
-            return Center(
-              child: Text('No anomalies detected in 20 minutes', style: Theme.of(context)
-                  .primaryTextTheme
-                  .bodyText2,),
-            );
-          return Container(
-            height: 32,
-            width: 320,
-            child: Row(
-              children: [
-                Text('Anomalies in 20 m: ', style: Theme.of(context)
-                    .primaryTextTheme
-                    .bodyText2,),
-                Container(
-                  width: 200,
-                  child: ListView.builder(
-                      scrollDirection: Axis.horizontal,
-                      itemCount: timestamps.length,
-                      itemBuilder: (BuildContext context, int i) {
-                        return Container(
-                          height: 16,
-                          child: Center(
-                              child: Text(TimeOfDay.fromDateTime(
-                                  DateTime.fromMillisecondsSinceEpoch(
-                                      timestamps[i].toInt() * 1000))
-                                  .format(context), style: Theme.of(context)
-                                  .primaryTextTheme
-                                  .bodyText2,)
-                          ),
-                        );
-                      }),
-                ),
-              ],
-            )
-          );
-        } else if (snapshot.hasError) {
-          return Text("${snapshot.error}");
-        }
-        return Text('Detecting anomalies...');
-      });
-}
+//class AnomalyList extends StatefulWidget {
+//  AnomalyList({Key key}) : super(key: key);
+//
+//  @override
+//  _AnomalyList createState() => _AnomalyList();
+//}
+//
+//class _AnomalyList extends State<AnomalyList> {
+//  Future<Chart> futureAnomaly;
+//  String chart;
+//
+//  @override
+//  Widget build(BuildContext context) {
+//    return anomalyList(futureAnomaly, chart);
+//  }
+//}

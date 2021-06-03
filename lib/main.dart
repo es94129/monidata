@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
-import 'package:monidata/overview.dart';
 
+import 'overview.dart';
 import 'node_list.dart';
+import 'service/notification_service.dart';
 
-void main() {
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await NotificationService().init();
   runApp(MyApp());
 }
-
 class MyApp extends StatelessWidget {
   // This widget is the root of your application.
   @override
