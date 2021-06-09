@@ -143,10 +143,10 @@ class _NodeDetailState extends State<NodeDetailPage> {
                           if (primaryDelta != 0) {
                             if (primaryDelta.isNegative) {
                               if (windowOffset > 0) {
-                                windowOffset -= (windowSeconds * 0.01).toInt();
+                                windowOffset -= (windowSeconds * 0.03).toInt();
                               }
                             } else {
-                              windowOffset += (windowSeconds * 0.01).toInt();
+                              windowOffset += (windowSeconds * 0.03).toInt();
                             }
                             futureChart = fetchChart(widget.hostname,
                                 windowSeconds, windowOffset, viewingChart);
@@ -341,18 +341,28 @@ class _NodeDetailState extends State<NodeDetailPage> {
                     ),
                     Container(
                       width: 200,
-                      child: ListView.builder(
+                      child: ListView.separated(
                           scrollDirection: Axis.horizontal,
+                          separatorBuilder: (BuildContext context, int index) {
+                            return SizedBox(width: 5,);
+                          },
                           itemCount: timestamps.length,
                           itemBuilder: (BuildContext context, int i) {
-                            return Container(
-                              height: 16,
-                              child: Center(
-                                  child: Text(
-                                    timestampToDateTime(timestamps[i].toDouble(), context),
-                                    style:
-                                    Theme.of(context).primaryTextTheme.bodyText2,
-                                  )),
+                            return InkWell(
+                              onTap: () {
+                                setState(() {
+                                  windowOffset = (DateTime.now().millisecondsSinceEpoch/1000).toInt() - timestamps[i];
+                                });
+                              },
+                              child: Container(
+                                height: 16,
+                                child: Center(
+                                    child: Text(
+                                      timestampToDateTime(timestamps[i].toDouble(), context),
+                                      style:
+                                      Theme.of(context).primaryTextTheme.bodyText2,
+                                    )),
+                              ),
                             );
                           }),
                     ),
