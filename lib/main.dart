@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'overview.dart';
 import 'node_list.dart';
+import 'settings.dart';
 import 'service/notification_service.dart';
 
 Future<void> main() async {
@@ -44,6 +45,7 @@ class MyApp extends StatelessWidget {
       routes: {
         '/node_list': (context) => NodeListPage(),
         '/overview': (context) => OverviewPage(),
+        '/settings': (context) => SettingsPage(),
       },
     );
   }
@@ -67,11 +69,19 @@ class MyHomePage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
         appBar: AppBar(
-          backgroundColor: Color(0x00ffffff),
+          backgroundColor: Color(0xffffff),
           elevation: 0,
           title: Text(
             this.title,
           ),
+          actions: <Widget>[
+            IconButton(
+                color: Colors.black54,
+                icon: const Icon(Icons.settings),
+                onPressed: () {
+                  Navigator.pushNamed(context, '/settings');
+                }),
+          ],
         ),
         body: Center(
           child: Column(
